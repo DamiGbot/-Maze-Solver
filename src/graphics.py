@@ -1,4 +1,4 @@
-from tkinter import Tk, BOTH, Canvas
+from tkinter import Tk, BOTH, Canvas, Button
 from line import Line
 
 class Window:
@@ -23,8 +23,14 @@ class Window:
     def close(self):
         self.running = False
 
-    def draw_line(self, line: Line, fill_color: str="blue"):
+    def draw_line(self, line: Line, fill_color: str="black"):
         line.draw(self.canvas, fill_color)
 
+    def draw_button(self, text):
+        button = Button(self.root, text= text, command=self.printText, fg="blue", bg="red")
+        return button;
+
+    def printText(self):
+        print("button Pressed")
 
 

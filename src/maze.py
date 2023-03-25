@@ -14,6 +14,7 @@ class Maze():
         self._cell_size_x = cell_size_x
         self._cell_size_y = cell_size_y
         self._win = win
+        self._myList = []
         if seed:
             random.seed(seed)
 
@@ -122,53 +123,63 @@ class Maze():
                 cell.visited = False
     
     # returns True if this is the end cell, OR if it leads to the end cell.
-    # returns False if this is a loser cell.
+    # returns False if this is not the end cell.
     def _solve_r(self, col, row):
         self._animate()
 
-        # vist the current cell
         self._cells[col][row].visited = True
 
-        # if we are at the end cell, we are done!
-        if col == self._num_cols - 1 and row == self._num_rows - 1:
-            return True
+        # if we get to the end (row.length - 1, colomn - 1) we return true 
+        if row == self._num_rows - 1 and col == self._num_cols - 1:
+            return True;
 
-        # move left if there is no wall and it hasn't been visited
-        if (col > 0 and not self._cells[col][col].has_left_wall and not self._cells[col - 1][row].visited):
-            self._cells[col][row].draw_move(self._cells[col - 1][row])
-            if self._solve_r(col - 1, row):
-                return True
+        # start position is from (0, 0)
+        # then I randomly pick a side that is opened (Meaning false)
+        nextPosition = [];
+        self._possible_directions_to_enter(col, row, nextPosition);
+
+        if len(nextPosition) > 0:
+            nextIdx = random.randint(0, len(nextPosition) - 1)
+            nextCell = nextPosition[nextIdx]
+            nextPosition.remove(nextCell)
+            self._cells[col][row].draw_move(self._cells[nextCell[0]][nextCell[1]])
+            self._myList.append((col, row))
+            return self._solve_r(nextCell[0], nextCell[1])
+        else: 
+            if len(self._myList) > 0:
+                listLength = len(self._myList) - 1
+                prevCell = self._myList[listLength]
+                self._myList.remove(prevCell)
+                self._cells[col][row].draw_move(self._cells[prevCell[0]][prevCell[1]], True)
+                return self._solve_r(prevCell[0], prevCell[1])
             else:
-                self._cells[col][row].draw_move(self._cells[col - 1][row], True)
+                # check if we can go back at most twice 
+                return False;
+            # I want to track back to previous cell 
+    
+    def _possible_directions_to_enter(self, col, row, next_index_list):
+        # determine which cell(s) to enter next
+        # left
+        if col > 0 and not self._cells[col - 1][row].visited and not self._cells[col][row].has_left_wall:
+            next_index_list.append((col - 1, row))
 
-        # move right if there is no wall and it hasn't been visited
-        if (col < self._num_cols - 1 and not self._cells[col][row].has_right_wall and not self._cells[col + 1][row].visited):
-            self._cells[col][row].draw_move(self._cells[col + 1][row])
-            if self._solve_r(col + 1, row):
-                return True
-            else:
-                self._cells[col][row].draw_move(self._cells[col + 1][row], True)
+        # right
+        if col < self._num_cols - 1 and not self._cells[col + 1][row].visited and not self._cells[col][row].has_right_wall:
+            next_index_list.append((col + 1, row))
 
-        # move up if there is no wall and it hasn't been visited
-        if (row > 0 and not self._cells[col][row].has_top_wall and not self._cells[col][row - 1].visited):
-            self._cells[col][row].draw_move(self._cells[col][row - 1])
-            if self._solve_r(col, row - 1):
-                return True
-            else:
-                self._cells[col][row].draw_move(self._cells[col][row - 1], True)
+        # up
+        if row > 0 and not self._cells[col][row - 1].visited and not self._cells[col][row].has_top_wall:
+            next_index_list.append((col, row - 1))
 
-        # move down if there is no wall and it hasn't been visited
-        if (row < self._num_rows - 1 and not self._cells[col][row].has_bottom_wall and not self._cells[col][row + 1].visited):
-            self._cells[col][row].draw_move(self._cells[col][row + 1])
-            if self._solve_r(col, row + 1):
-                return True
-            else:
-                self._cells[col][row].draw_move(self._cells[col][row + 1], True)
+        # down
+        if row < self._num_rows - 1 and not self._cells[col][row + 1].visited and not self._cells[col][row].has_bottom_wall:
+            next_index_list.append((col, row + 1))
 
-        # we went the wrong way let the previous cell know by returning False
-        return False
 
     # create the moves for the solution using a depth first search
     def solve(self):
         return self._solve_r(0, 0)
 
+# I want to create a stack 
+# this stack is used to keep track of all the cell I have entered.
+# if there is no way I pop of the top of the stack and move  to it 
